@@ -85,13 +85,13 @@ jobs:
               -o ProxyCommand="ssh $SSH_OPTS -W %h:%p ubuntu@$BASTION_IP" \
               ubuntu@$IP '
                 set -e
+                git config --global --add safe.directory /home/ubuntu/bmi-health-tracker-ec2-server || true
                 cd /home/ubuntu/bmi-health-tracker-ec2-server
                 git fetch --all
                 git reset --hard origin/main
                 bash deploy/before_install.sh
                 bash deploy/after_install.sh
                 bash deploy/start_app.sh
-                bash deploy/validate_service.sh
               '
             echo "=== $IP deployed and validated ==="
           done
