@@ -1,0 +1,25 @@
+# Terraform
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.*
+*.tfvars
+!terraform.tfvars.example
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# OS/editor
+.DS_Store
+.vscode/
+*.swp
+
+# Secrets
+.env
+.env.*
+!/.env.example
+
+# Build outputs
+node_modules/

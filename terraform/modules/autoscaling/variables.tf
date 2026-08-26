@@ -1,0 +1,11 @@
+variable "project_name" { type = string }
+variable "environment" { type = string }
+variable "launch_template_id" { type = string }
+variable "launch_template_version" { type = string }
+variable "subnets" { type = list(string) }
+variable "target_group_arn" { type = string }
+variable "min_size" { type = number }
+variable "desired_capacity" { type = number }
+variable "max_size" { type = number }
+variable "target_cpu_utilization" { type = number }
+variable "common_tags" { type = map(string) }

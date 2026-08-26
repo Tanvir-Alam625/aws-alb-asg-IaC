@@ -1,0 +1,12 @@
+{
+    "Activity": {
+        "ActivityId": "d09680f6-f4f9-adb9-30a3-840ed17a82c8",
+        "AutoScalingGroupName": "tv-3tier-production-backend-asg-f6f06fd859b3786fa44ca1c809",
+        "Description": "Terminating EC2 instance: i-08f14b25287568f78",
+        "Cause": "At 2026-08-26T11:03:27Z instance i-08f14b25287568f78 was taken out of service in response to a user request.",
+        "StartTime": "2026-08-26T11:03:27.595000+00:00",
+        "StatusCode": "InProgress",
+        "Progress": 0,
+        "Details": "{\"Availability Zone ID\":\"aps1-az1\",\"Subnet ID\":\"subnet-0b443adc0950fdd97\",\"Availability Zone\":\"ap-south-1a\"}"
+    }
+}

@@ -1,0 +1,10 @@
+variable "project_name" { type = string }
+variable "environment" { type = string }
+variable "vpc_id" { type = string }
+variable "subnets" { type = list(string) }
+variable "security_group_id" { type = string }
+variable "backend_target_group_name" { type = string }
+variable "backend_port" { type = number }
+variable "enable_https" { type = bool }
+variable "acm_certificate_arn" { type = string }
+variable "common_tags" { type = map(string) }
