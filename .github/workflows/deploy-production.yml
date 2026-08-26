@@ -65,11 +65,22 @@ jobs:
                 set -e
                 git config --global --add safe.directory /home/ubuntu/bmi-health-tracker-ec2-server || true
                 cd /home/ubuntu/bmi-health-tracker-ec2-server
-                git fetch --all
-                git reset --hard origin/main
-                bash deploy/before_install.sh
-                bash deploy/after_install.sh
-                bash deploy/start_app.sh
+
+                # Try updating repo as ubuntu user; if permissions prevent it, fix ownership and retry
+                if sudo -u ubuntu git fetch --all && sudo -u ubuntu git reset --hard origin/main; then
+                  echo "git updated as ubuntu"
+                else
+                  echo "git update failed as ubuntu — fixing ownership and retrying"
+                  sudo chown -R ubuntu:ubuntu /home/ubuntu/bmi-health-tracker-ec2-server || true
+                  sudo chmod -R u+rwX /home/ubuntu/bmi-health-tracker-ec2-server || true
+                  sudo -u ubuntu git fetch --all
+                  sudo -u ubuntu git reset --hard origin/main
+                fi
+
+                # Run deploy scripts as ubuntu to avoid creating root-owned files
+                sudo -u ubuntu bash deploy/before_install.sh
+                sudo -u ubuntu bash deploy/after_install.sh
+                sudo -u ubuntu bash deploy/start_app.sh
               '
             echo "=== $IP deployed and validated ==="
           done
