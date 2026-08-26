@@ -1,31 +1,28 @@
 # Architecture Overview
 
 ## Infrastructure diagram
-
-```text
-Internet
-  |
-  v
-IGW
-  |
-  v
-Public subnets
-  |
-  +--> ALB
-  |
-  +--> Bastion EC2
-  |
-  v
-Private application subnets
-  |
-  +--> Backend ASG
-          |
-          +--> Node.js + Express + /health endpoint
-  |
-  v
-Private database subnet
-  |
-  +--> PostgreSQL EC2
+```mermaid
+flowchart LR
+  Internet["Internet"] --> IGW["IGW"]
+  IGW --> Public["Public Subnets"]
+  Public --> ALB["ALB (internet-facing)"]
+  Public --> Bastion["Bastion EC2 (public)"]
+  IGW --> NAT["NAT Gateway"]
+  Public -->|routes| PrivateApp["Private Application Subnets"]
+  PrivateApp --> ASG["Auto Scaling Group (backend)"]
+  ASG --> Backend1["Backend EC2 (Node.js) 1\n/health"]
+  ASG --> Backend2["Backend EC2 (Node.js) 2\n/health"]
+  ASG --> Backend3["Backend EC2 (Node.js) 3\n/health"]
+  PrivateDB["Private DB Subnet"] --> DB["PostgreSQL EC2"]
+  ASG --> DB
+  Bastion -. SSH .-> Backend1
+  Bastion -. SSH .-> Backend2
+  Bastion -. SSH .-> Backend3
+  ALB -->|forwards traffic| ASG
+  classDef public fill:#e6f7ff,stroke:#0366d6;
+  classDef private fill:#fff5e6,stroke:#d46a00;
+  class Public,ALB,Bastion public;
+  class PrivateApp,ASG,Backend1,Backend2,Backend3,PrivateDB,DB private;
 ```
 
 ## SSH topology
