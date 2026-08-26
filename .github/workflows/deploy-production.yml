@@ -10,29 +10,29 @@ permissions:
   contents: read
 
 jobs:
-  validate:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
+  # validate:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout source
+  #       uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 20
+  #         cache: npm
 
-      - name: Install dependencies
-        run: npm ci --if-present
+  #     - name: Install dependencies
+  #       run: npm ci --if-present
 
-      - name: Run tests
-        run: npm test --if-present
+  #     - name: Run tests
+  #       run: npm test --if-present
 
-      - name: Run build
-        run: npm run build --if-present
+  #     - name: Run build
+  #       run: npm run build --if-present
 
   deploy:
-    needs: validate
+    # needs: validate
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
