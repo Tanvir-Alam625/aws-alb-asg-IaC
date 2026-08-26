@@ -45,17 +45,61 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Package artifact
+      - name: Discover bastion and backend instances
+        id: discover
         run: |
-          mkdir -p deploy-artifact
-          tar -czf deploy-artifact/backend.tar.gz .
+          BASTION_IP=$(aws ec2 describe-instances \
+            --filters "Name=tag:Component,Values=bastion" "Name=instance-state-name,Values=running" \
+            --query 'Reservations[].Instances[].PublicIpAddress' --output text)
 
-      - name: Deploy to AWS
-        run: |
-          echo "Production deployment would run here."
-          echo "The application should be deployed through CodeDeploy, ASG rollout, or a deployment job configured with the AWS credentials."
+          BACKEND_IPS=$(aws ec2 describe-instances \
+            --filters "Name=tag:Component,Values=backend" "Name=instance-state-name,Values=running" \
+            --query 'Reservations[].Instances[].PrivateIpAddress' --output text)
 
-      - name: Health check
+          if [ -z "$BASTION_IP" ] || [ -z "$BACKEND_IPS" ]; then
+            echo "Could not discover bastion or backend instances" >&2
+            exit 1
+          fi
+
+          echo "bastion_ip=$BASTION_IP" >> "$GITHUB_OUTPUT"
+          echo "backend_ips=$BACKEND_IPS" >> "$GITHUB_OUTPUT"
+          echo "Bastion: $BASTION_IP"
+          echo "Backends: $BACKEND_IPS"
+
+      - name: Set up SSH key
         run: |
-          echo "Check ALB /health after deployment"
-          echo "curl -f http://$(terraform output -raw alb_dns_name 2>/dev/null || echo ALB_DNS)/health || exit 1"
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/tv_key.pem
+          chmod 600 ~/.ssh/tv_key.pem
+
+      - name: Rolling deploy to each backend instance
+        env:
+          BASTION_IP: ${{ steps.discover.outputs.bastion_ip }}
+          BACKEND_IPS: ${{ steps.discover.outputs.backend_ips }}
+        run: |
+          SSH_OPTS="-i ~/.ssh/tv_key.pem -o StrictHostKeyChecking=no -o ConnectTimeout=10"
+
+          for IP in $BACKEND_IPS; do
+            echo "=== Deploying to $IP ==="
+            ssh $SSH_OPTS \
+              -o ProxyCommand="ssh $SSH_OPTS -W %h:%p ubuntu@$BASTION_IP" \
+              ubuntu@$IP '
+                set -e
+                cd /home/ubuntu/bmi-health-tracker-ec2-server
+                git fetch --all
+                git reset --hard origin/main
+                bash deploy/before_install.sh
+                bash deploy/after_install.sh
+                bash deploy/start_app.sh
+                bash deploy/validate_service.sh
+              '
+            echo "=== $IP deployed and validated ==="
+          done
+
+      - name: Final ALB health check
+        run: |
+          ALB_DNS=$(aws elbv2 describe-load-balancers \
+            --query "LoadBalancers[?contains(LoadBalancerName, 'tv-3tier-production')].DNSName" \
+            --output text)
+          echo "Checking https://$ALB_DNS/health"
+          curl -fsS "http://$ALB_DNS/health"
